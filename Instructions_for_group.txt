@@ -1,0 +1,18 @@
+Hello Group 6,
+
+I have created this github repository to synchronise our team project.
+
+Feel free to download each others sas programs, make a copy and progress through it.
+
+Note: Always make a copy and then edit the program so that one's personal code remains unedited.
+
+For example, i have done till importing all the files into the sas program. If you want to continue working from my program,
+download my program to your computer, do whatever changes you wish and upload a new file by your name so that all files and progress 
+is distinguishable
+
+
+To familiarise with github commands: how to clone, add files, commit changes and push files to Github,
+Refer this video: https://www.youtube.com/watch?v=5HLst694D_Y
+
+Thank you,
+Ghayaas
