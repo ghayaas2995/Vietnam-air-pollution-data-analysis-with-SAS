@@ -38,6 +38,7 @@ RUN;
 
 ********************************************************************************************************************************;
 * CLEANING 2016 MONTH DATASET*;
+********************************************************************************************************************************;
 
 * lets first explore contents and means of this dataset*;
 
@@ -163,7 +164,7 @@ DATA hcmc_2016_12;
 		AQI=round(((NowCast_Conc_-350.5)/(500.4-350.5))*(500-401)+0);
 run;		
 		
-/* creating a new column Aqi_Category_Corrected in temp_1*/;
+/* creating a new column Aqi_Category_Corrected*/;
 
 DATA hcmc_2016_12;
 	SET hcmc_2016_12;
@@ -387,24 +388,127 @@ DATA hcmc_merged;
 RUN;
 ********************************************************************************************************************************;
 
-* SInce all wrong values have been treated, we can change 'Inval' and 'Missi' in QC_Name to 'Valid';
+* Since all wrong values have been treated, we can change 'Inval' and 'Missi' in QC_Name to 'Valid';
 
 data hcmc_merged;
 set hcmc_merged;
 
 if qc_name='Inval' or qc_name ='Missi' then qc_Name = 'Valid';
 run;
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+											* DESCRIPTIVE STATISTICS*;
+********************************************************************************************************************************;
+********************************************************************************************************************************;
 
+* 1. Lets determine the normality of the variables raw_conc, now cast conc and aqi using histograms, univariate analysis
+and skewness and kurtosis parameters*;
 
+proc univariate data=hcmc_merged;
+by year;
+var raw_conc_ nowcast_conc_ aqi;
+histogram raw_conc_ nowcast_conc_ aqi;
+run;
 
+********************************************************************************************************************************;
+* box plot of raw_conc grouped by year*;
 
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Box plot of 'Raw_Conc_' for years 2016 - 2021";
+	vbox Raw_Conc_ / group=Year;
+	yaxis grid;
+run;
 
+********************************************************************************************************************************;
+* box plot of now_Cast_conc grouped by year*;
 
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Box plot of 'Now_Cast_Conc_' for years 2016 - 2021";
+	vbox NowCast_Conc_ / group=Year;
+	yaxis grid;
+run;
 
+********************************************************************************************************************************;
+* box plot of AQI grouped by year*;
 
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Box plot of 'AQI' for years 2016 - 2021";
+	vbox AQI / group=Year;
+	yaxis grid;
+run;
 
+********************************************************************************************************************************;
+* Bar chart to determine the average air quality in the month of december for the years 2016-2021*;
 
+proc sort data=WORK.HCMC_MERGED out=_BarChartTaskData;
+	by date__lt_;
+run;
 
+proc sgplot data=_BarChartTaskData;
+	by Year;
+	title height=14pt "Average air quality in the month of Dec for the";
+	vbar AQI_Category / datalabel;
+	yaxis grid;
+run;
+
+ods graphics / reset;
+title;
+
+proc datasets library=WORK noprint;
+	delete _BarChartTaskData;
+	run;
+	
+********************************************************************************************************************************;
+* Bar chart to determine the average AQI in each AQI category in the month of December of the years 2016 - 2021*;	
+
+proc sort data=WORK.HCMC_MERGED out=_BarChartTaskData;
+	by date__lt_;
+run;
+
+proc sgplot data=_BarChartTaskData;
+	by Year;
+	title height=14pt "Average AQI in each AQI Category for the";
+	vbar AQI_Category / response=AQI fillattrs=(color=CXf09d6d) fillType=gradient 
+		stat=mean;
+	yaxis grid;
+run;
+
+ods graphics / reset;
+title;
+
+proc datasets library=WORK noprint;
+	delete _BarChartTaskData;
+	run;	
+********************************************************************************************************************************;
+* Average PM 2.5 pollutant concentration in the month of December of the years 2016 - 2021*;
+	
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Average PM 2.5 Pollutant concentration in Dec Month";
+	vbar Year / response=Raw_Conc_ fillattrs=(color=CX7ce2ab) fillType=gradient 
+		stat=mean;
+	yaxis grid;
+run;
+	
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+									* CORRELATION ANALYSIS* Or * MULTIVARIATE ANALYSIS *
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+
+* Correlation analysis of the continuous variables - Raw_Conc_ NowCast_Conc_ AQI*;
+
+proc sort data=WORK.HCMC_MERGED out=Work.SortTempTableSorted;
+	by date__lt_;
+run;
+
+proc corr data=Work.SortTempTableSorted pearson spearman 
+		plots=matrix(histogram);
+	var AQI Raw_Conc_ NowCast_Conc_;
+	by Year;
+run;
+
+proc delete data=Work.SortTempTableSorted;
+run;
 
 
 
