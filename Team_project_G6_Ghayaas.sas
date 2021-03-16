@@ -51,8 +51,6 @@ PROC MEANS DATA=HCMC_2016_12 n nmiss mean median min max skewness kurtosis std m
 VAR _numeric_;
 RUN;
 
-*only customerId variable has missing values*;
-
 * Exploring Character variables*;
 
 proc freq data=HCMC_2016_12 order=freq ;
@@ -510,27 +508,176 @@ run;
 proc delete data=Work.SortTempTableSorted;
 run;
 
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+									* ANALYSIS WITH EXTERNAL DATASETS*
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+* Loading external datasets*
 
+/*1st file:*/;
+PROC IMPORT OUT=HCMC_allweather_2016_12
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Dec_2016.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+/*2nd file:*/
+PROC IMPORT OUT=HCMC_allweather_2017_12
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Dec_2017.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+/*3rd file:*/
+PROC IMPORT OUT=HCMC_allweather_2018_12
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Dec_2018.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+/*4th file:*/
+PROC IMPORT OUT=HCMC_allweather_2019_12
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Dec_2019.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+/*5th file:*/
+PROC IMPORT OUT=HCMC_allweather_2020_12
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Dec_2020.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+/*6th file:*/
+PROC IMPORT OUT=HCMC_allweather_2021_02
+		DATAFILE='/folders/myfolders/DANA-Group-6-team-project/External data CSV files/HCMC all weather Feb_2021.csv' 
+		DBMS=CSV REPLACE; GETNAMES=YES;	DATAROW=2;
+RUN;
 
+********************************************************************************************************************************;
+* All the datasets have same set of variables. Lets concatenate them into a single dataset and then explore for data quality*;
 
+data HCMC_ALLWEATHER_MERGED;
+set hcmc_allweather_2016_12 
+hcmc_allweather_2017_12 
+hcmc_allweather_2018_12 
+hcmc_allweather_2019_12 
+hcmc_allweather_2020_12
+hcmc_allweather_2021_02;
+by year;
+run;
 
+********************************************************************************************************************************;
 
+* exploring the contents of the all weather data*;
 
+proc contents data=hcmc_allweather_merged;
+run;
 
+* Exploring all the numeric variables with proc means procedure*;
 
+PROC MEANS DATA=hcmc_allweather_merged n nmiss mean median min max skewness kurtosis std mode range;
+VAR _numeric_;
+RUN;
 
+* we infer that the columns Atm_Pressure_sealevel and Total_rainfall_snowmelt are interpreted as character variables
+However these columns are 100% empty. Therefore delete those columns*;
 
+data hcmc_allweather_merged;
+set hcmc_allweather_merged (drop= Atm_Pressure_sealevel Total_rainfall_snowmelt );
+run;
 
+* all variables are numeric. No missing values and out of range values*
 
+The external dataset has daily values and not hourly*;
 
+********************************************************************************************************************************;
+* Make the previous air pollution data of HCMC city as daily by taking average values of day*;
 
+PROC SQL; 
+CREATE TABLE WORK.hcmc_merged_daily 
+AS 
+SELECT 
+DISTINCT HCMC_MERGED.Site, HCMC_MERGED.Parameter, HCMC_MERGED.Year, HCMC_MERGED.Month, HCMC_MERGED.Day, AVG(HCMC_MERGED.AQI) 
+AS AQI, AVG(HCMC_MERGED.Raw_Conc_) 
+AS Raw_Conc_, HCMC_MERGED.Conc__Unit, HCMC_MERGED.Duration, HCMC_MERGED.QC_Name, AVG(HCMC_MERGED.NowCast_Conc_) 
+AS NowCast_Conc_, MIN(HCMC_MERGED.AQI_Category) 
+AS AQI_Category 
+FROM WORK.HCMC_MERGED HCMC_MERGED 
+GROUP BY HCMC_MERGED.Year, HCMC_MERGED.Month, HCMC_MERGED.Day; 
+QUIT;
 
+* Merging the pollution dataset with the new all weather dataset*;
 
+proc sql;
+create table HCMC_FULL_DATA as
+select A.*, B.Avg_Temp, B.Max_Temp, B.Min_Temp, B.Avg_Relative_Humidity, B.Avg_Visibility, B.Avg_Windspeed, B.Max_Windspeed
+from hcmc_merged_daily A, hcmc_allweather_merged B
+where A.year=B.year and A.month=B.month and A.day=B.day
+group by A.Year, A.Month, A.Day;
+quit;
+
+* Rounding off the high decimal values*;
+
+data hcmc_full_data;
+set hcmc_full_data;
+aqi = round(aqi,1);
+raw_conc_ = round(raw_conc_ ,0.1);
+nowcast_conc_ = round(nowcast_conc_, 0.1);
+run;
+
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+									* CORRELATION ANALYSIS WITH EXTERNAL DATASETS*
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+* 2.	Use external dataset and determine the correlation of temperature, atmospheric pressure, humidity, visibility,
+and wind speed with the air pollution of HCMC city. Explain how air pollution impacts all other weather parameters.;
+
+*Performing correlatoin analysis on the whole dataset to answer this question*;
+
+proc sort data=WORK.HCMC_FULL_DATA out=Work.SortTempTableSorted;
+	by Year;
+run;
+
+proc corr data=Work.SortTempTableSorted pearson spearman outp=work.Corr_stats 
+		plots=matrix(histogram);
+	var Raw_Conc_ AQI NowCast_Conc_ Avg_Temp Avg_Relative_Humidity Avg_Visibility 
+		Avg_Windspeed;
+	by Year;
+run;
+
+proc delete data=Work.SortTempTableSorted;
+run;
+
+********************************************************************************************************************************;
+* Summarizing the above analysis with the help of a bar chart grouped by year*;
+
+proc sort data=WORK.CORR_STATS out=_BarChartTaskData;
+	by Year;
+run;
+
+proc sgplot data=_BarChartTaskData;
+	by Year;
+	title height=14pt 
+		"Summary of Impact of PM 2.5 pollutant on weather parameters";
+	hbar _NAME_ / response=Raw_Conc_ fillattrs=(color=CXf8f68d) datalabel 
+		stat=mean;
+	xaxis grid;
+run;
+
+ods graphics / reset;
+title;
+
+proc datasets library=WORK noprint;
+	delete _BarChartTaskData;
+	run;
+********************************************************************************************************************************;
+* General Summary of the correlation analysis with the help of a bar chart*;
+
+proc sgplot data=WORK.CORR_STATS;
+	title height=14pt "Average Impact of PM 2.5 pollutant on weather parameters";
+	hbar _NAME_ / response=Raw_Conc_ fillattrs=(color=CX8df8f8) datalabel 
+		stat=mean;
+	xaxis grid;
+run;
 
 
 
