@@ -679,9 +679,27 @@ proc sgplot data=WORK.CORR_STATS;
 	xaxis grid;
 run;
 
+* P.S - Similar bar chart for AQI was also plotted and the correlation values of the weather parameters wrt to AQI
+ were same as they are wrt raw conc
+********************************************************************************************************************************;
 
+* The hypotheses we obtain from the above correlation analysis with respect to PM 2.5 pollutant are
 
+1. There is negative correlation of about 50% between wind speed and the concentration of PM 2.5 pollutant in HCMC city
+	( Wind speed is less when the PM 2.5 conc is more in the air) 
 
+2. There is negative correlation of about 45% between Visibility and the concentration of PM 2.5 pollutant in HCMC city
+	( Visibility is less when the PM 2.5 conc is more in the air)
+
+3. The average temerature in HCMC city is not correlated or impacted by the concentration of PM 2.5 pollutant in the atmosphere.
+
+4. The average Humidity in HCMC city is not correlated or impacted by the concentration of PM 2.5 pollutant in the atmosphere.
+
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+												* HYPOTHESES TESTING*
+********************************************************************************************************************************;
+********************************************************************************************************************************;
 
 
 
