@@ -701,8 +701,115 @@ run;
 ********************************************************************************************************************************;
 ********************************************************************************************************************************;
 
+* Points to Note:
+- If p value (alpha) in t test less than 0.05, then reject null hypothesis. and accept alternate hypothesis
+- Sides = 2 represents Two tailed t test
+- higher the T value (+ve or -ve), represents strong evidence against null hypothesis
+- closer to 0 T value represents weak evidence against null hypothesis
 
+********************************************************************************************************************************;
 
+* 1. H0 = The population correlation coefficient between Raw_Conc and AQI for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and AQI in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and AQI is not 0.
+	 		Meaning - There is correlation between raw_conc and AQI in population dataset.
+	 		( sample correlation coefficient 'r' = 98.82%)*;
+	 		
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* AQI;
+run;
+
+* Result:
+- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and AQI values in population
+- t value = -78.84 implies we have very strong evidence in rejecting null hypothesis.
+- In population, increase or decrease in magnitude of raw conc, increases or decreases AQI
+********************************************************************************************************************************;
+
+* 2. H0 = The population correlation coefficient between Raw_Conc and NowCast_Conc_ for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and NowCast_Conc_ in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and NowCast_Conc_ is not 0.
+	 		Meaning - There is correlation between raw_conc and NowCast_Conc_ in population dataset.
+	 		( sample correlation coefficient 'r' = 99.8%)*;
+
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* NowCast_Conc_;
+run;
+
+* Result:
+- P value is 0.6072 = 60.72% means that, we accept null hypothesis, we do not have correlation between raw_conc and Now cast values in population
+- t value = -0.52 implies we have very weak evidence in rejecting null hypothesis.
+- In population, increase or decrease in magnitude of raw conc does not increase or decrease Now cast values
+********************************************************************************************************************************;
+
+* 3. H0 = The population correlation coefficient between Raw_Conc and Temperature for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and Temperature in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Temperature is not 0.
+	 		Meaning - There is correlation between raw_conc and Temperature in population dataset.
+	 		( sample correlation coefficient 'r' = 0.15%)*;
+
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* Avg_Temp;
+run;
+
+* Result:
+- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Temperature values in population
+- t value = 8.62 implies we have strong evidence in rejecting null hypothesis.
+- In population, increase in temperature is affected with increase in raw_conc (PM 2.5 pollutant)
+********************************************************************************************************************************;
+
+* 4. H0 = The population correlation coefficient between Raw_Conc and Humidity for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and Humidity in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Humidity is not 0.
+	 		Meaning - There is correlation between raw_conc and Humidity in population dataset.
+	 		( sample correlation coefficient 'r' = 0.27%)*;
+
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* Avg_relative_humidity;
+run;
+
+* Result:
+- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Humidity values in population
+- t value = -41.77 implies we have very strong evidence in rejecting null hypothesis.
+- In population, increase in Humidity is affected with increase in raw_conc (PM 2.5 pollutant)
+********************************************************************************************************************************;
+
+* 5. H0 = The population correlation coefficient between Raw_Conc and Visibility for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and Visibility in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Visibility is not 0.
+	 		Meaning - There is correlation between raw_conc and Visibility in population dataset.
+	 		( sample correlation coefficient 'r' = -47%)*;
+
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* Avg_visibility;
+run;
+
+* Result:
+- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Visibility values in population
+- t value = 30.22 implies we have very strong evidence in rejecting null hypothesis.
+- In population, visibility is inversely correlated with PM 2.5 pollutant(because r=-47%). That is, higher pollution implies lesser visibility
+********************************************************************************************************************************;
+
+* 6. H0 = The population correlation coefficient between Raw_Conc and WindSpeed for the population (represented by 'rho') is 0.
+			Meaning - There is no correlation between raw_conc and WindSpeed in population dataset.			
+	 Ha = The population correlation coefficient 'rho' between Raw_Conc and WindSpeed is not 0.
+	 		Meaning - There is correlation between raw_conc and WindSpeed in population dataset.
+	 		( sample correlation coefficient 'r' = -50%)*;
+
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+paired raw_conc_* Avg_windspeed;
+run;
+
+* Result:
+- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and WindSpeed values in population
+- t value = 29.22 implies we have very strong evidence in rejecting null hypothesis.
+- In population, WindSpeed is inversely correlated with PM 2.5 pollutant(because r=-50%). That is, higher pollution implies lesser WindSpeed
+********************************************************************************************************************************;
+
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+												* LINEAR MODEL*
+********************************************************************************************************************************;
+********************************************************************************************************************************;
 
 
 
