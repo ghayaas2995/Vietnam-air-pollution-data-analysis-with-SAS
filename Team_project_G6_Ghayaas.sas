@@ -706,6 +706,7 @@ run;
 - Sides = 2 represents Two tailed t test
 - higher the T value (+ve or -ve), represents strong evidence against null hypothesis
 - closer to 0 T value represents weak evidence against null hypothesis
+- Based on decision rule and comparing the t value with T table, reject null hypothesis if t value > 1.96 or <-1.96
 
 ********************************************************************************************************************************;
 
@@ -752,7 +753,7 @@ paired raw_conc_* Avg_Temp;
 run;
 
 * Result:
-- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Temperature values in population
+- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Temperature values in population
 - t value = 8.62 implies we have strong evidence in rejecting null hypothesis.
 - In population, increase in temperature is affected with increase in raw_conc (PM 2.5 pollutant)
 ********************************************************************************************************************************;
@@ -768,7 +769,7 @@ paired raw_conc_* Avg_relative_humidity;
 run;
 
 * Result:
-- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Humidity values in population
+- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Humidity values in population
 - t value = -41.77 implies we have very strong evidence in rejecting null hypothesis.
 - In population, increase in Humidity is affected with increase in raw_conc (PM 2.5 pollutant)
 ********************************************************************************************************************************;
@@ -784,7 +785,7 @@ paired raw_conc_* Avg_visibility;
 run;
 
 * Result:
-- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and Visibility values in population
+- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Visibility values in population
 - t value = 30.22 implies we have very strong evidence in rejecting null hypothesis.
 - In population, visibility is inversely correlated with PM 2.5 pollutant(because r=-47%). That is, higher pollution implies lesser visibility
 ********************************************************************************************************************************;
@@ -800,7 +801,7 @@ paired raw_conc_* Avg_windspeed;
 run;
 
 * Result:
-- P value less than 0.05 means that, we accept null hypothesis, we have correlation between raw_conc and WindSpeed values in population
+- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and WindSpeed values in population
 - t value = 29.22 implies we have very strong evidence in rejecting null hypothesis.
 - In population, WindSpeed is inversely correlated with PM 2.5 pollutant(because r=-50%). That is, higher pollution implies lesser WindSpeed
 ********************************************************************************************************************************;
@@ -811,19 +812,62 @@ run;
 ********************************************************************************************************************************;
 ********************************************************************************************************************************;
 
+* Dependent variable: AQI. independent features selected by modelling all features into linear model and selecting
+most affecting features Raw_Conc_ NowCast_Conc_ Avg_Temp Avg_Visibility Avg_Windspeed:; 
+
+proc reg data=WORK.HCMC_FULL_DATA alpha=0.05 plots(only)=(diagnostics residuals 
+		observedbypredicted) outest=linear_est;
+AQI_hat: model AQI=Raw_Conc_ NowCast_Conc_ Avg_Temp Avg_Visibility Avg_Windspeed /;
+	run;
+quit;
+
+proc print data= linear_est;
+run;
+
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+												* ARIMA MODEL*
+********************************************************************************************************************************;
+********************************************************************************************************************************;
+
+* We have AQI values till february 23rd 2021 in our dataset. What will be the AQI values from 24th feb to 28th feb ?
+
+* Time series exploration to determine P, D, Q values:;
+
+data hcmc_full_data_arima;
+set hcmc_full_data;
+date=mdy(month,day,year);
+  format date mmddyy10.;
+run;
 
 
+* P = 1 (from PACF plot)
+  D = 1 (seasonality observed)
+  Q = 3 (from ACF plot);
 
 
+* ARIMA MODEL*;
+
+proc sort data=WORK.HCMC_FULL_DATA_ARIMA out=Work.preProcessedData;
+	by date;
+run;
+
+proc arima data=Work.preProcessedData plots
+     (only)=(series(acf corr crosscorr pacf) residual(corr normal) 
+		forecast(forecast) ) out=work.arima_forecast;
+	identify var=AQI(1);
+	estimate p=(1) q=(1 2 3) method=ML;
+	forecast lead=5 back=0 alpha=0.05 id=date interval=day;
+	outlier;
+	run;
+quit;
+
+proc delete data=Work.preProcessedData;
+run;
 
 
-
-
-
-
-
-
-
+*********************************************   THE END   **********************************************************************;
+********************************************************************************************************************************;
 
 
 
