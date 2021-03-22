@@ -1,0 +1,160 @@
+*------------------------DATA IMPORT----------------------------------;
+
+/* Generated Code (IMPORT) */
+/* Source File: HoChiMinhCity_PM2.5_2016_12_MTD.csv */
+/* Source Path: /folders/myfolders/Group Project 1 */
+/* Code generated on: 3/13/21, 7:47 PM */
+
+*2016;
+
+%web_drop_table(HCMC2016_12);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2016_12_MTD_Nowcast.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2016_12;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2016_12; RUN;
+
+
+%web_open_table(HCMC2017_12);
+
+*2017;
+
+%web_drop_table(HCMC2017_12);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2017_12_MTD.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2017_12;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2017_12; RUN;
+
+
+%web_open_table(HCMC2017_12);
+
+* 2018;
+
+%web_drop_table(HCMC2018_12);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2018_12_MTD.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2018_12;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2018_12; RUN;
+
+
+%web_open_table(HCMC2018_12);
+
+* 2019;
+
+%web_drop_table(HCMC2019_12);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2019_12_MTD.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2019_12;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2019_12; RUN;
+
+
+%web_open_table(HCMC2019_12);
+
+* 2020;
+
+%web_drop_table(HCMC2020_12);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2020_12_MTD.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2020_12;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2020_12; RUN;
+
+
+%web_open_table(HCMC2020_12);
+
+* 2021;
+
+%web_drop_table(HCMC2021_02);
+
+
+FILENAME REFFILE '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2021_02_MTD.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=HCMC2021_02;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=HCMC2021_02; RUN;
+
+
+%web_open_table(HCMC2021_02);
+
+
+*-----------------------------CLEANING PROCESS--------------------------;
+
+*24-hour midpoint average variabe has been replaced with NowCast_Conc in excel. (for HCMC2016_12 data);
+
+data HCMC2016_12_clean;
+	infile '/folders/myfolders/Group Project 1/HoChiMinhCity_PM2.5_2016_12_MTD_Nowcast.csv' dlm=',' firstobs=2 missover dsd;
+	format Site $16. Parameter $17. Date__LT_ DATETIME13. Year 4. Month 2. Day 2. Hour 2. 
+	NowCast_Conc_ 5.1 AQI 3. AQI_Category $31. Raw_Conc_ 3.	Conc__Unit $6. Duration $4. QC_Name $10.;
+	input Site $ Parameter $ Date__LT_:ANYDTDTM40.	Year	Month	Day	Hour	
+	NowCast_Conc_ AQI AQI_Category $ Raw_Conc_ Conc__Unit $	Duration $	QC_Name $;
+	
+	if AQI <= 50 then AQI_Category = "Good";
+	if AQI > 50 and AQI <=100 then AQI_Category = "Moderate";
+	if AQI > 100 and AQI <= 150 then AQI_Category = "Unhealthy for Sensitive Groups";
+	iF AQI > 150 and AQI <= 200 then AQI_Category = "Unhealthy";
+	iF AQI > 200 and AQI <= 300 then AQI_Category = "Very Unhealthy";
+	iF AQI > 300 and AQI <= 500 then AQI_Category = "Hazardous";
+run;
+
+data HCMC_master;
+	set HCMC2016_12_clean HCMC2017_12 HCMC2018_12 HCMC2019_12 HCMC2020_12 HCMC2021_02;
+	
+	* AQI value excluding for improving accuracy;
+	IF AQI = -999 then delete; *The range of AQI Value is from 0 to 500, thus -999 is presumed to be mismeasured or missing data;
+	IF AQI = 0 then delete; *Even though it is in 0 to 500 AQI range, it is out of range compared to the other AQI values on same day. 
+	
+	
+	QC Name represents "Invalid" shows invalid value;
+	If QC_Name = "Missing" then delete;
+	iF QC_Name = "Invalid" then delete;
+	If QC_Name = "Missi" then delete;
+	iF QC_Name = "Inval" then delete;
+	
+	if Month = 1 then delete;
+	if Raw_Conc_ < 0 then Raw_Conc_ = 0;
+run;
+
+proc freq data = HCMC_master;
+table AQI_Category QC_Name Conc__Unit Duration Parameter Site;
+run;
+	
+proc means data= HCMC_master n nmiss min max median mean;
+var Date__LT_ Year Month Day Hour NowCast_Conc_ AQI Raw_Conc_;
+run;
