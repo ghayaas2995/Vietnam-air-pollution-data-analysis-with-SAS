@@ -438,45 +438,23 @@ run;
 ********************************************************************************************************************************;
 * Bar chart to determine the average air quality in the month of december for the years 2016-2021*;
 
-proc sort data=WORK.HCMC_MERGED out=_BarChartTaskData;
-	by date__lt_;
-run;
-
-proc sgplot data=_BarChartTaskData;
-	by Year;
-	title height=14pt "Average air quality in the month of Dec for the";
-	vbar AQI_Category / datalabel;
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt 
+		"Average air quality in the month of Dec for the years 2016-2021";
+	vbar Year / group=AQI_Category groupdisplay=cluster datalabel;
 	yaxis grid;
 run;
-
-ods graphics / reset;
-title;
-
-proc datasets library=WORK noprint;
-	delete _BarChartTaskData;
-	run;
 	
 ********************************************************************************************************************************;
 * Bar chart to determine the average AQI in each AQI category in the month of December of the years 2016 - 2021*;	
 
-proc sort data=WORK.HCMC_MERGED out=_BarChartTaskData;
-	by date__lt_;
-run;
-
-proc sgplot data=_BarChartTaskData;
-	by Year;
-	title height=14pt "Average AQI in each AQI Category for the";
-	vbar AQI_Category / response=AQI fillattrs=(color=CXf09d6d) fillType=gradient 
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Average AQI in each AQI Category (2016 - 2021)";
+	hbar Year / response=AQI group=AQI_Category groupdisplay=cluster datalabel 
 		stat=mean;
-	yaxis grid;
+	xaxis grid;
 run;
 
-ods graphics / reset;
-title;
-
-proc datasets library=WORK noprint;
-	delete _BarChartTaskData;
-	run;	
 ********************************************************************************************************************************;
 * Average PM 2.5 pollutant concentration in the month of December of the years 2016 - 2021*;
 	
@@ -683,7 +661,7 @@ run;
  were same as they are wrt raw conc
 ********************************************************************************************************************************;
 
-* The hypotheses we obtain from the above correlation analysis with respect to PM 2.5 pollutant are
+* The inferences we obtain from the above correlation analysis with respect to PM 2.5 pollutant are
 
 1. There is negative correlation of about 50% between wind speed and the concentration of PM 2.5 pollutant in HCMC city
 	( Wind speed is less when the PM 2.5 conc is more in the air) 
@@ -702,18 +680,20 @@ run;
 ********************************************************************************************************************************;
 
 * Points to Note:
-- If p value (alpha) in t test less than 0.05, then reject null hypothesis. and accept alternate hypothesis
+- If p value (alpha) in t test is less than 0.05, then reject null hypothesis. and accept alternate hypothesis
 - Sides = 2 represents Two tailed t test
 - higher the T value (+ve or -ve), represents strong evidence against null hypothesis
 - closer to 0 T value represents weak evidence against null hypothesis
-- Based on decision rule and comparing the t value with T table, reject null hypothesis if t value > 1.96 or <-1.96
+- Based on decision rule and comparing the t value with T table, reject null hypothesis if t value > 1.96 or <-1.96 (for 95% CI)
+- Population in this testing refers to the entire year of which sample is taken from
 
+Refer: https://www.geo.fu-berlin.de/en/v/soga/Basics-of-statistics/Hypothesis-Tests/Inferential-Methods-in-Regression-and-Correlation/Hypothesis-Testing-About-the-Linear-Correlation-Coefficient/index.html
+
+Refer: https://libguides.library.kent.edu/SAS/PairedSamplestTest        * for paired t test*
 ********************************************************************************************************************************;
 
-* 1. H0 = The population correlation coefficient between Raw_Conc and AQI for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and AQI in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and AQI is not 0.
-	 		Meaning - There is correlation between raw_conc and AQI in population dataset.
+* 1. H0 = There is no correlation between raw_conc and AQI in population			
+	 Ha = There is correlation between raw_conc and AQI in population
 	 		( sample correlation coefficient 'r' = 98.82%)*;
 	 		
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -721,15 +701,13 @@ paired raw_conc_* AQI;
 run;
 
 * Result:
-- P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and AQI values in population
+- P value less than 0.05 means that, we REJECT NULL HYPOTHESIS, we have correlation between raw_conc and AQI values in population
 - t value = -78.84 implies we have very strong evidence in rejecting null hypothesis.
-- In population, increase or decrease in magnitude of raw conc, increases or decreases AQI
+- As raw_conc increases, the AQI value also increases
 ********************************************************************************************************************************;
 
-* 2. H0 = The population correlation coefficient between Raw_Conc and NowCast_Conc_ for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and NowCast_Conc_ in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and NowCast_Conc_ is not 0.
-	 		Meaning - There is correlation between raw_conc and NowCast_Conc_ in population dataset.
+* 2. H0 = There is no correlation between raw_conc and NowCast_Conc_ in population			
+	 Ha = There is correlation between raw_conc and NowCast_Conc_ in population
 	 		( sample correlation coefficient 'r' = 99.8%)*;
 
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -737,15 +715,14 @@ paired raw_conc_* NowCast_Conc_;
 run;
 
 * Result:
-- P value is 0.6072 = 60.72% means that, we accept null hypothesis, we do not have correlation between raw_conc and Now cast values in population
+- P value is 0.6072 = 60.72% means that, we ACCEPT NULL HYPOTHESIS, we do not have correlation between raw_conc and Now cast values in population
 - t value = -0.52 implies we have very weak evidence in rejecting null hypothesis.
-- In population, increase or decrease in magnitude of raw conc does not increase or decrease Now cast values
+- The increase in the magnitude of raw_conc values does not increase magnitude of Now_Cast_Conc. This is also true for the reason that now cast
+ is a 12 hour average of raw conc values. (Ex. raw cast value of 500 does not produce the corresponding now cast value of 500)
 ********************************************************************************************************************************;
 
-* 3. H0 = The population correlation coefficient between Raw_Conc and Temperature for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and Temperature in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Temperature is not 0.
-	 		Meaning - There is correlation between raw_conc and Temperature in population dataset.
+* 3. H0 = There is no correlation between raw_conc and Temperature in population			
+	 Ha = There is correlation between raw_conc and Temperature in population
 	 		( sample correlation coefficient 'r' = 0.15%)*;
 
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -755,13 +732,11 @@ run;
 * Result:
 - P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Temperature values in population
 - t value = 8.62 implies we have strong evidence in rejecting null hypothesis.
-- In population, increase in temperature is affected with increase in raw_conc (PM 2.5 pollutant)
+- Increase in temperature is affected with increase in raw_conc (PM 2.5 pollutant)
 ********************************************************************************************************************************;
 
-* 4. H0 = The population correlation coefficient between Raw_Conc and Humidity for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and Humidity in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Humidity is not 0.
-	 		Meaning - There is correlation between raw_conc and Humidity in population dataset.
+* 4. H0 = There is no correlation between raw_conc and Humidity in population			
+	 Ha = There is correlation between raw_conc and Humidity in population
 	 		( sample correlation coefficient 'r' = 0.27%)*;
 
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -771,13 +746,11 @@ run;
 * Result:
 - P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Humidity values in population
 - t value = -41.77 implies we have very strong evidence in rejecting null hypothesis.
-- In population, increase in Humidity is affected with increase in raw_conc (PM 2.5 pollutant)
+- Increase in Humidity is affected with increase in raw_conc (PM 2.5 pollutant)
 ********************************************************************************************************************************;
 
-* 5. H0 = The population correlation coefficient between Raw_Conc and Visibility for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and Visibility in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and Visibility is not 0.
-	 		Meaning - There is correlation between raw_conc and Visibility in population dataset.
+* 5. H0 = There is no correlation between raw_conc and Visibility in population			
+	 Ha = There is correlation between raw_conc and Visibility in population
 	 		( sample correlation coefficient 'r' = -47%)*;
 
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -787,13 +760,11 @@ run;
 * Result:
 - P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and Visibility values in population
 - t value = 30.22 implies we have very strong evidence in rejecting null hypothesis.
-- In population, visibility is inversely correlated with PM 2.5 pollutant(because r=-47%). That is, higher pollution implies lesser visibility
+- Visibility is inversely correlated with PM 2.5 pollutant(because r=-47%). That is, higher pollution implies lesser visibility
 ********************************************************************************************************************************;
 
-* 6. H0 = The population correlation coefficient between Raw_Conc and WindSpeed for the population (represented by 'rho') is 0.
-			Meaning - There is no correlation between raw_conc and WindSpeed in population dataset.			
-	 Ha = The population correlation coefficient 'rho' between Raw_Conc and WindSpeed is not 0.
-	 		Meaning - There is correlation between raw_conc and WindSpeed in population dataset.
+* 6. H0 = There is no correlation between raw_conc and WindSpeed in population		
+	 Ha = There is correlation between raw_conc and WindSpeed in population
 	 		( sample correlation coefficient 'r' = -50%)*;
 
 proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
@@ -803,7 +774,7 @@ run;
 * Result:
 - P value less than 0.05 means that, we ACCEPT ALTERNATE HYPOTHESIS, we have correlation between raw_conc and WindSpeed values in population
 - t value = 29.22 implies we have very strong evidence in rejecting null hypothesis.
-- In population, WindSpeed is inversely correlated with PM 2.5 pollutant(because r=-50%). That is, higher pollution implies lesser WindSpeed
+- WindSpeed is inversely correlated with PM 2.5 pollutant(because r=-50%). That is, higher pollution implies lesser WindSpeed
 ********************************************************************************************************************************;
 
 ********************************************************************************************************************************;
