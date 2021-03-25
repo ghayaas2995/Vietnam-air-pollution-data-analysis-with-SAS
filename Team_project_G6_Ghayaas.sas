@@ -464,6 +464,16 @@ proc sgplot data=WORK.HCMC_MERGED;
 		stat=mean;
 	yaxis grid;
 run;
+
+********************************************************************************************************************************;
+* Bar chart to determine what time of the day experiences highest and lowest pollution;
+
+proc sgplot data=WORK.HCMC_MERGED;
+	title height=14pt "Raw Concentration Hourly Average";
+	vbar Hour / response=Raw_Conc_ fillattrs=(color=CXef0245) datalabel 
+		fillType=gradient stat=mean dataskin=matte;
+	yaxis grid;
+run;
 	
 ********************************************************************************************************************************;
 ********************************************************************************************************************************;
@@ -767,7 +777,7 @@ run;
 	 Ha = There is correlation between raw_conc and WindSpeed in population
 	 		( sample correlation coefficient 'r' = -50%)*;
 
-proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;
+proc ttest data= hcmc_full_data h0=0 sides=2 alpha=0.05;	
 paired raw_conc_* Avg_windspeed;
 run;
 
@@ -796,8 +806,8 @@ proc print data= linear_est;
 run;
 
 ********************************************************************************************************************************;
-********************************************************************************************************************************;
-										* TIME SERIES ANALYSIS: ARIMA MODEL*
+********************************************************************************************************************************
+		EXTRA							* TIME SERIES ANALYSIS: ARIMA MODEL*
 ********************************************************************************************************************************;
 ********************************************************************************************************************************;
 
